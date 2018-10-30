@@ -7,6 +7,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -149,6 +150,9 @@ public abstract class BaseEvaluation {
 				case SUGGESTER:
 					extractSuggestEntityIds(rsp, res);
 					break;
+				case FIELD_LABEL:
+					extractPayloads(rsp, res);
+					break;
 				default:
 					extractEntityIds(rsp, res);
 			}
@@ -189,6 +193,38 @@ public abstract class BaseEvaluation {
 		}
 	}
 
+	/**
+	 * This method extracts payloads from Solr response and parses them
+	 * using suggester parser
+	 * @param rsp The Solr query response
+	 * @param res The resulting list
+	 * @throws EntitySuggestionException
+	 */
+	@SuppressWarnings("unchecked")
+	private void extractPayloads(QueryResponse rsp, List<String> res)
+			throws EntitySuggestionException {
+		
+		SolrDocumentList docList = rsp.getResults();
+
+		SimpleOrderedMap<?> queryParams = (SimpleOrderedMap<?>) rsp.getResponseHeader().get(SuggestionFields.PARAMS);
+		int VALUE_PART = 1;
+		String queryTerm = (String) queryParams.get(SuggestionFields.Q);
+		String searchedTerm = queryTerm.split(":")[VALUE_PART]; 
+		
+		if(docList != null){
+			EntityPreview preview;
+			String payload;
+			List<String> payloadList = new ArrayList<String>();
+			for (SolrDocument solrDocument : docList) {
+				payloadList = (List<String>)solrDocument.getFieldValue(SuggestionFields.PAYLOAD);
+				payload = Arrays.toString(payloadList.toArray()); 
+				preview = getSuggestionHelper().parsePayload(
+						payload.substring(1, payload.length()-1), new String[]{"All"}, searchedTerm);
+				res.add(preview.getEntityId());
+			}
+		}
+	}
+
 	private void extractEntityIds(QueryResponse rsp, List<String> res)
 			throws EntitySuggestionException {
 		
@@ -222,7 +258,8 @@ public abstract class BaseEvaluation {
 			case FIELD_LABEL:
 				//?q=label%3AMozart*&sort=derived_score+desc&rows=100&fl=skos_prefLabel%2C+payload%2C+id%2C+pagerank%2C+derived_score%2C+europeana_term_hits%2C+europeana_doc_count&wt=json&indent=true
 				searchParams = new String[]{CommonParams.SORT, "derived_score desc", "q.op", "AND"};
-				fields = new String[]{"id", "skos_prefLabel", "payload", "derived_score"};
+//				fields = new String[]{"id", "skos_prefLabel", "payload", "derived_score"};
+				fields = new String[]{"term", "payload"};
 				solrQuery = buildSolrQuery(FIELD_LABEL + ":(" +query + "*)", searchParams, fields);
 				break;	
 			case SUGGESTER:	

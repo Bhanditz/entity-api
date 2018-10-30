@@ -41,7 +41,7 @@ public class EvalSuggestOptionsTest extends BaseEvaluation {
 		return res;
 	}
 
-	@Test
+//	@Test
 	public void testSuggestPrefLabel() throws Exception {
 		initEval("AutoCompleteDataset_2.csv", FIELD_SKOS_PREF_LABEL + "SuggestionsResults.csv");
 		FileUtils.writeStringToFile(testResultsFile, HEAD_LINE, "utf-8", false);
@@ -63,7 +63,7 @@ public class EvalSuggestOptionsTest extends BaseEvaluation {
 		System.out.println("done");
 	}
 	
-	@Test
+//	@Test
 	public void testSuggester() throws Exception {
 		initEval("AutoCompleteDataset_2.csv", "suggesterResults.csv");
 		FileUtils.writeStringToFile(testResultsFile, HEAD_LINE, "utf-8", false);
